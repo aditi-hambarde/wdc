@@ -1,193 +1,131 @@
 #include <iostream>
-#include <string.h>
+#include <string>
 using namespace std;
-typedef struct node {
-  char k[20];
-  char m[20];
-  class node *left;
-  class node *right;
-} node;
-class dict {
+class dictionary;
+class node {
+  string word, meaning;
+  node *left, *right;
+
 public:
-  node *root;
-  void create();
-  void disp(node *);
-  void insert(node *root, node *temp);
-  int search(node *, char[]);
-  int update(node *, char[]);
-  node *del(node *, char[]);
-  node *min(node *);
+  friend class dictionary;
+  node() {
+    left = NULL;
+    right = NULL;
+  }
+  node(string word, string meaning) {
+    this->word = word;
+    this->meaning = meaning;
+    left = NULL;
+    right = NULL;
+  }
 };
-void dict ::create() {
-  class node *temp;
-  int ch;
-  do {
-    temp = new node;
-    cout << "\nEnter Keyword:";
-    cin >> temp->k;
-    cout << "\nEnter Meaning:";
-    cin >> temp->m;
-    temp->left = NULL;
-    temp->right = NULL;
-    if (root == NULL) {
-      root = temp;
-    } else {
-      insert(root, temp);
-    }
-    cout << "\nDo u want to add more (y=1/n=0):";
-    cin >> ch;
-  } while (ch == 1);
-}
-void dict ::insert(node *root, node *temp) {
-  if (strcmp(temp->k, root->k) < 0) {
-    if (root->left == NULL)
-      root->left = temp;
-    else
-      insert(root->left, temp);
-  } else {
-    if (root->right == NULL)
-      root->right = temp;
-    else
-      insert(root->right, temp);
+class dictionary {
+  node *root;
+
+public:
+  dictionary() { root = NULL; }
+  void create();
+  void inorder_rec(node *rnode);
+  void postorder_rec(node *rnode);
+  void inorder() { inorder_rec(root); }
+  void postorder();
+  bool insert(string word, string meaning);
+  int search(string key);
+};
+int dictionary::search(string key) {
+  node *tmp = root;
+  int count;
+  if (tmp == NULL) {
+    return -1;
   }
-}
-void dict::disp(node *root) {
-  if (root != NULL) {
-    disp(root->left);
-    cout << "\n Key Word :" << root->k;
-    cout << "\t Meaning :" << root->m;
-    disp(root->right);
-  }
-}
-int dict ::search(node *root, char k[20]) {
-  int c = 0;
-  while (root != NULL) {
-    c++;
-    if (strcmp(k, root->k) == 0) {
-      cout << "\nNo of Comparisons:" << c;
-      return 1;
+  if (root->word == key)
+    return 1;
+  while (tmp != NULL) {
+    if ((tmp->word) > key) {
+      tmp = tmp->left;
+      count++;
+    } else if ((tmp->word) < key) {
+      tmp = tmp->right;
+      count++;
+    } else if (tmp->word == key) {
+      return ++count;
     }
-    if (strcmp(k, root->k) < 0)
-      root = root->left;
-    if (strcmp(k, root->k) > 0)
-      root = root->right;
   }
   return -1;
 }
-int dict ::update(node *root, char k[20]) {
-  while (root != NULL) {
-    if (strcmp(k, root->k) == 0) {
-      cout << "\nEnter New Meaning of Keyword" << root->k;
-      cin >> root->m;
-      return 1;
-    }
-    if (strcmp(k, root->k) < 0)
-      root = root->left;
-    if (strcmp(k, root->k) > 0)
-      root = root->right;
+void dictionary::postorder() { postorder_rec(root); }
+void dictionary::postorder_rec(node *rnode) {
+  if (rnode) {
+    postorder_rec(rnode->right);
+    cout << " " << rnode->word << " : " << rnode->meaning << endl;
+    postorder_rec(rnode->left);
   }
-  return -1;
 }
-node *dict ::del(node *root, char k[20]) {
-  node *temp;
+void dictionary::create() {
+  int n;
+  string wordI, meaningI;
+  cout << "\nHow many Word to insert?:\n";
+  cin >> n;
+  for (int i = 0; i < n; i++) {
+    cout << "\nENter Word: ";
+    cin >> wordI;
+    cout << "\nEnter Meaning: ";
+    cin >> meaningI;
+    insert(wordI, meaningI);
+  }
+}
+void dictionary::inorder_rec(node *rnode) {
+  if (rnode) {
+    inorder_rec(rnode->left);
+    cout << " " << rnode->word << " : " << rnode->meaning << endl;
+    inorder_rec(rnode->right);
+  }
+}
+bool dictionary::insert(string word, string meaning) {
+  node *p = new node(word, meaning);
   if (root == NULL) {
-    cout << "\nElement Not Found";
-    return root;
+    root = p;
+    return true;
   }
-  if (strcmp(k, root->k) < 0) {
-    root->left = del(root->left, k);
-    return root;
+  node *cur = root;
+  node *par = root;
+  while (cur != NULL) // traversal
+  {
+    if (word > cur->word) {
+      par = cur;
+      cur = cur->right;
+    } else if (word < cur->word) {
+      par = cur;
+      cur = cur->left;
+    } else {
+      cout << "\nWord is already in the dictionary.";
+      return false;
+    }
   }
-  if (strcmp(k, root->k) > 0) {
-    root->right = del(root->right, k);
-    return root;
+  if (word > par->word) // insertion of node
+  {
+    par->right = p;
+    return true;
+  } else {
+    par->left = p;
+    return true;
   }
-  if (root->right == NULL && root->left == NULL) {
-    temp = root;
-    delete temp;
-    return NULL;
-  }
-  if (root->right == NULL) {
-    temp = root;
-    root = root->left;
-    delete temp;
-    return root;
-  } else if (root->left == NULL) {
-    temp = root;
-    root = root->right;
-    delete temp;
-    return root;
-  }
-  temp = min(root->right);
-  strcpy(root->k, temp->k);
-  root->right = del(root->right, temp->k);
-  return root;
-}
-node *dict ::min(node *q) {
-  while (q->left != NULL) {
-    q = q->left;
-  }
-  return q;
 }
 int main() {
-  int ch;
-  dict d;
-  d.root = NULL;
-  do {
-    cout << "\nMenu\n1.Create\n2.Disp\n3.Search\n4.Update\n5.Delete\nEnter "
-            "your choice:";
-    cin >> ch;
-    switch (ch) {
-    case 1:
-      d.create();
-      break;
-    case 2:
-      if (d.root == NULL) {
-        cout << "\nNo such Keyword";
-      } else {
-        d.disp(d.root);
-      }
-      break;
-    case 3:
-      if (d.root == NULL) {
-        cout << "\nDictionary is Empty. First add keywords then try again ";
-      } else {
-        cout << "\nEnter Keyword which u want to search:";
-        char k[20];
-        cin >> k;
-        if (d.search(d.root, k) == 1)
-          cout << "\nKeyword Found";
-        else
-          cout << "\nKeyword Not Found";
-      }
-      break;
-    case 4:
-      if (d.root == NULL) {
-        cout << "\nDictionary is Empty. First add keywords then try again ";
-      } else {
-        cout << "\nEnter Keyword whose meaning you want to update:";
-        char k[20];
-        cin >> k;
-        if (d.update(d.root, k) == 1)
-          cout << "\nMeaning Updated";
-        else
-          cout << "\nMeaning Not Found";
-      }
-      break;
-    case 5:
-      if (d.root == NULL) {
-        cout << "\nDictionary is Empty. First add keywords then try again ";
-      } else {
-        cout << "\nEnter Keyword which u want to delete:";
-        char k[20];
-        cin >> k;
-        if (d.root == NULL) {
-          cout << "\nNo any Keyword";
-        } else {
-          d.root = d.del(d.root, k);
-        }
-      }
-    }
-  } while (ch <= 5);
+  string word;
+  dictionary months;
+  months.create();
+  cout << "Ascending order\n";
+  months.inorder();
+  cout << "\nDescending order:\n";
+  months.postorder();
+  cout << "\nEnter word to search: ";
+  cin >> word;
+  int comparisons = months.search(word);
+  if (comparisons == -1) {
+    cout << "\nNot found word";
+  } else {
+    cout << "\n " << word << " found in " << comparisons << " comparisons";
+  }
   return 0;
 }
